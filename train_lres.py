@@ -235,7 +235,7 @@ def train(
 
 @click.command()
 @click.option("--outdir", help="Where to make the output run directory", type=str, default="runs/lres")
-@click.option("--dataset", "dataset_dir", help="Path to dataset directory", type=str, default='/home/wilson/dmlab')
+@click.option("--dataset", "dataset_dir", help="Path to dataset directory", type=str, default='/home/wilson/data/dmlab')
 @click.option("--batch", "total_batch", help="Total batch size across all GPUs and gradient accumulation steps", type=int, default=32)  # fmt: skip
 @click.option("--grad-accum", help="Gradient accumulation steps", type=int, default=1)
 @click.option("--gamma", "r1_gamma", help="R1 regularization gamma", type=float, default=1.0)
