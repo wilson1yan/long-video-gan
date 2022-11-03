@@ -23,7 +23,7 @@ import wandb
 
 import dnnlib
 import utils
-from dataset import VideoDataset
+from dataset import VideoDataset2
 from dnnlib import EasyDict
 from metrics import metric_main
 from model.video_gan_lres import LowResVideoGAN
@@ -90,8 +90,8 @@ def train(
         samples_dir.mkdir()
 
     with utils.context_timer0("Loading video dataset"):
-        result_dataset = VideoDataset(dataset_dir, result_seq_length, height, width, x_flip=x_flip)
-        dataset = VideoDataset(dataset_dir, seq_length, height, width, x_flip=x_flip)
+        result_dataset = VideoDataset2(dataset_dir, result_seq_length, height, width, x_flip=x_flip)
+        dataset = VideoDataset2(dataset_dir, seq_length, height, width, x_flip=x_flip)
         data_iter = utils.get_infinite_data_iter(
             dataset, batch_size=batch_per_gpu, seed=utils.random_seed(), **loader_kwargs
         )
@@ -235,9 +235,9 @@ def train(
 
 @click.command()
 @click.option("--outdir", help="Where to make the output run directory", type=str, default="runs/lres")
-@click.option("--dataset", "dataset_dir", help="Path to dataset directory", type=str, required=True)
-@click.option("--batch", "total_batch", help="Total batch size across all GPUs and gradient accumulation steps", type=int, default=64)  # fmt: skip
-@click.option("--grad-accum", help="Gradient accumulation steps", type=int, default=2)
+@click.option("--dataset", "dataset_dir", help="Path to dataset directory", type=str, default='/home/wilson/dmlab')
+@click.option("--batch", "total_batch", help="Total batch size across all GPUs and gradient accumulation steps", type=int, default=32)  # fmt: skip
+@click.option("--grad-accum", help="Gradient accumulation steps", type=int, default=1)
 @click.option("--gamma", "r1_gamma", help="R1 regularization gamma", type=float, default=1.0)
 @click.option("--metric", "-m", "metrics", help="Metrics to compute", default=[], type=str, multiple=True)
 def main(
@@ -260,26 +260,26 @@ def main(
         run_dir=None,
         dataset_dir=dataset_dir,
         seq_length=128,
-        height=36,
-        width=64,
-        x_flip=True,
+        height=16,
+        width=16,
+        x_flip=False,
         seed=None,
         benchmark=False,
         allow_fp16_reduce=False,
         allow_tf32=False,
         start_step=0,
         total_steps=100000,
-        steps_per_tick=500,
+        steps_per_tick=100,
         ticks_per_G_ema_ckpt=10,
-        ticks_per_train_ckpt=100,
-        result_seq_length=256,
+        ticks_per_train_ckpt=1000,
+        result_seq_length=128,
         r1_interval=16,
         total_batch=total_batch,
         metrics=metrics,
     )
 
     c.loader_kwargs = EasyDict(
-        num_workers=2,
+        num_workers=4,
         prefetch_factor=2,
         drop_last=True,
         pin_memory=True,
@@ -312,7 +312,7 @@ def main(
         class_name="model.generator_lres.VideoGenerator",
         num_fp16_layers=0,
         temporal_padding=8,
-        temporal_emb_dim=1024,
+        temporal_emb_dim=512,
     )
     c.gan_kwargs.D_kwargs = EasyDict(
         class_name="model.discriminator_lres.VideoDiscriminator",

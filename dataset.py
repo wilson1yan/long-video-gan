@@ -13,14 +13,44 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Optional
 from zipfile import ZipFile
+import os.path as osp
+import glob
 
 import einops
 import numpy as np
 import torch
+import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data import Dataset
 
 # =====================================================================================================================
+
+
+@dataclass
+class VideoDataset2(Dataset):
+    dataset_dir: str
+    seq_length: int
+    height: int
+    width: int
+    min_spacing: int = 1
+    max_spacing: int = 1
+    min_video_length: Optional[int] = None
+    x_flip: bool = False
+
+    def __post_init__(self):
+        self.video_paths = glob.glob(osp.join(self.dataset_dir, 'train', '**.npz'))
+
+    def __getitem__(self, index):
+        data = np.load(self.video_paths[index])
+        video = data['video'][:self.seq_length] # THWC
+        video = 2 * torch.from_numpy(video).float() / 255. - 1
+        video = video.movedim(-1, 1) # TCHW
+        video = F.interpolate(video, (self.height, self.width), antialias=True)
+        video = video.movedim(1, 0) # CTHW
+        return dict(video=video, spacing=1)
+
+    def __len__(self):
+        return len(self.video_paths)
 
 
 @dataclass
